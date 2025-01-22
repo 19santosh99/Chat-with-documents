@@ -3,6 +3,79 @@ from streamlit_chat import message
 import os
 import PyPDF2
 from dotenv import load_dotenv
+from langchain.text_splitter import CharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+
+def extract_text_from_documents(uploaded_files):
+    """
+    Process multiple uploaded documents and combine their content.
+    Args:
+        uploaded_files: List of uploaded file objects
+    Returns:
+        Dictionary containing combined text from all documents
+    """
+    print("Extracting text from documents...")
+    combined_text = ""
+    
+    if uploaded_files:
+        for uploaded_file in uploaded_files:
+            file_extension = uploaded_file.name.split('.')[-1].lower()
+            
+            if file_extension == 'pdf':
+                pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                for page in pdf_reader.pages:
+                    combined_text += page.extract_text() + "\n\n"
+                    
+            elif file_extension == 'txt':
+                combined_text += uploaded_file.getvalue().decode('utf-8') + "\n\n"
+                
+        print("Length of combined text: ", len(combined_text))
+        return {"text": combined_text, "text_length": len(combined_text)}
+    return None
+
+def create_chunks(text):
+    """
+    Split a given text into smaller chunks.
+    Args:
+        text: The input text to be split into chunks
+    Returns:
+        List of chunks as strings
+    """
+    print("Creating chunks...")
+    # Define the chunk size (adjust this value based on your requirements)
+    chunk_size = 1000
+    chunks_overlap=200
+
+    character_text_splitter = CharacterTextSplitter(
+        separator="\n",
+        chunk_size=chunk_size,
+        chunk_overlap= chunks_overlap,
+        length_function=len
+    )
+
+    # Split documents into chunks
+    chunks = character_text_splitter.split_text(text)
+    print(f"Number of chunks: {len(chunks)}")
+    return chunks
+
+def create_embeddings(documents):
+    """
+    1. This function creates embeddings for a list of texts.
+    2. It uses OpenAI's embedding model to generate embeddings for each chunk.
+    3. It returns a list of embeddings.
+    Args:
+        texts: A list of strings representing the input texts.
+        Returns:
+            List of embeddings as numpy arrays.
+    """
+    print("Creating embeddings...")
+    # Initialize OpenAI embedding model
+    embeddings = OpenAIEmbeddings(openai_api_key=os.environ["OPENAI_API_KEY"])
+    db = FAISS.from_texts(texts=documents, embedding=embeddings)
+    print("Vector Store Created.")
+    return db
+
 
 def process_documents(uploaded_files):
     """
@@ -11,7 +84,14 @@ def process_documents(uploaded_files):
     3. Next it creates the embeddings of the chunks.
     4. Finally, it creates a vector store from the embeddings and returns the vector store.
     """
-    return ""
+    # Extract text from the uploaded documents
+    raw_text = extract_text_from_documents(uploaded_files)["text"]
+
+    # Create chunks of text from the combined content
+    chunks = create_chunks(raw_text)
+
+    # Create embeddings from the chunks
+    vector_store = create_embeddings(chunks)
 
 def main():
     # Load environment variables
@@ -31,6 +111,7 @@ def main():
         )
         
         if uploaded_files:
+            print("No of uploaded files: ", len(uploaded_files))
             st.write("Uploaded files:")
             for file in uploaded_files:
                 st.write(f"📄 {file.name}")
@@ -39,8 +120,17 @@ def main():
     st.title("Chat with your Documents")
 
     if uploaded_files:
-        # Process all documents
-        documents_data = process_documents(uploaded_files)
+        # Create a placeholder for the loader
+        loader_placeholder = st.empty()
+        
+        with loader_placeholder.container():
+            with st.spinner('Processing your documents... This may take a moment...'):
+                # Process all documents
+                print("Processing documents...")
+                documents_data = process_documents(uploaded_files)
+        
+        # Clear the loader after processing is complete
+        loader_placeholder.empty()
 
         # Initialize chat history in session state
         if "messages" not in st.session_state:
@@ -69,6 +159,18 @@ def main():
                 div.stButton > button:first-child {
                     border-radius: 20px;
                     padding: 10px 24px;
+                }
+                /* Custom CSS for the loader */
+                .processing-loader {
+                    text-align: center;
+                    padding: 20px;
+                    background: #f0f2f6;
+                    border-radius: 10px;
+                    margin: 20px 0;
+                }
+                .stSpinner {
+                    text-align: center;
+                    margin: 20px 0;
                 }
                 </style>
                 """,

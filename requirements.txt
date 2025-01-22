@@ -3,3 +3,7 @@ streamlit-chat
 PyPDF2
 openai
 python-dotenv
+langchain
+langchain_openai
+faiss-cpu
+langchain_community
