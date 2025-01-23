@@ -152,7 +152,6 @@ def main():
     st.title("Chat with your Documents")
 
     if uploaded_files and not st.session_state.documents_processed:
-        # Create a placeholder for the loader
         with st.spinner('Processing your documents... This may take a moment...'):
             # Process all documents
             print("Processing documents...")
@@ -285,7 +284,6 @@ def main():
                 
                 st.markdown("<div style='height: 1px;'></div>", unsafe_allow_html=True)
 
-        # Function to handle message submission
         def handle_message_submit():
             if st.session_state.user_input.strip():
                 # Add user message to chat history
@@ -300,6 +298,7 @@ def main():
                     bot_response = bot_response["answer"]
                 else:
                     bot_response = "I'm sorry, I don't understand. Can you please rephrase your question?"
+                    
                 # Add bot message to chat history
                 st.session_state.messages.append(
                     {"message": bot_response, "is_user": False}
@@ -308,28 +307,111 @@ def main():
                 # Clear the input
                 st.session_state.user_input = ""
 
-        # User input area at the bottom
-        st.markdown("<br>" * 2, unsafe_allow_html=True)  # Add some space
-        
-        # Create the input field and button
+        st.markdown("""
+            <style>
+            /* Main container structure */
+            .main .block-container {
+                padding-bottom: 0 !important;
+                padding-top: 2rem !important;
+                max-width: 100% !important;
+            }
+            
+            /* Chat container */
+            .chat-container {
+                max-width: 800px;
+                margin: 0 auto;
+                background-color: #212121;
+                border-radius: 10px;
+                overflow-y: auto;
+                height: calc(100vh - 120px);
+            }
+            
+            /* Input container */
+            .input-container {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background-color: #1A1A1A;
+                border-top: 1px solid #404040;
+                padding: 1rem;
+                z-index: 1000;
+            }
+            
+            /* Content wrapper */
+            .content-wrapper {
+                max-width: 800px;
+                margin: 0 auto;
+                position: relative;
+            }
+            
+            /* Input field styling */
+            .stTextInput > div > div > input {
+                background-color: #2A2A2A !important;
+                color: #FFFFFF !important;
+                border: 1px solid #404040 !important;
+                border-radius: 10px !important;
+                padding: 15px !important;
+                font-size: 16px !important;
+                line-height: 1.5 !important;
+                width: 100% !important;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1) !important;
+            }
+            
+            /* Focus state */
+            .stTextInput > div > div > input:focus {
+                border-color: #00ADB5 !important;
+                box-shadow: 0 0 0 2px rgba(0,173,181,0.2) !important;
+                outline: none !important;
+            }
+            
+            /* Placeholder */
+            .stTextInput > div > div > input::placeholder {
+                color: #888888 !important;
+            }
+            
+            /* Reset streamlit elements */
+            .stTextInput {
+                position: static !important;
+                margin: 0 !important;
+            }
+            
+            .stTextInput > div {
+                background-color: transparent !important;
+            }
+            
+            /* Hide default streamlit components */
+            .stApp > header {
+                display: none !important;
+            }
+            
+            /* App background */
+            .stApp {
+                background-color: #1A1A1A;
+            }
+            
+            /* Remove bottom padding/margin from elements */
+            .element-container {
+                margin-bottom: 0 !important;
+            }
+            
+            footer {
+                display: none !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+
+        # Create input container
+        st.markdown('<div class="input-container"><div class="content-wrapper">', unsafe_allow_html=True)
+
+        # Create the input field
         st.text_input(
-            "You:", 
+            "",
+            placeholder="Send a message...",
             key="user_input",
             on_change=handle_message_submit,
             args=(),
             kwargs={},
-        )
-
-        # Style improvements
-        st.markdown(
-            """
-            <style>
-            .stTextInput > div > div > input {
-                border-radius: 20px;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True,
         )
 
     else:
